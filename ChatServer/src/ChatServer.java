@@ -58,48 +58,43 @@ public class ChatServer {
 				
 				String message;
 				String userName = "";
+				
 				while ((message = in.readLine()) != null) {
-					String command = "";
-					String parameter = "";
-					
 
-					if (message.split(" ").length > 1) {
-						command = message.split(" ", 2)[0];
-						parameter = message.split(" ", 2)[1];
-					} else {
-						System.out.println("message.length " + message.length() + " " + message);
-						//System.out.println("else");
-					}
-					if (command.equalsIgnoreCase("USER")) {
+					String[] parts = message.split(" ", 2);
+					String command = parts[0];
+					String parameter = parts.length > 1 ? parts[1] : "";
+
+					switch (command) {
+					case "USER":
 						userName = parameter;
 						if (!accounts.containsKey(userName)) {
-							out.write("ERR Not found user\n");
-							out.flush();
+							sendResponse(out, "ERR Not found user");
 						} else {
-							out.write("OK Password Require\n");
-							out.flush();
+							sendResponse(out, "OK Password Require");
 						}
-					} else if (command.equalsIgnoreCase("PASS")) {
-						System.out.println("Phi check pass " + userName + " " + parameter);
-						if (!accounts.get(userName).equals(parameter)) {
-							System.out.println("Phi check pass err");
-							out.write("ERR Password incorrect\n");
-							out.flush();
+						break;
+
+					case "PASS":
+						if (!accounts.getOrDefault(userName, "").equals(parameter)) {
+							sendResponse(out, "ERR Password incorrect");
 						} else {
-							System.out.println("Phi check pass correct");
-							out.write("OK Login successful\n");
-							out.flush();
+							sendResponse(out, "OK Login successful");
 						}
-					} else if (command.equalsIgnoreCase( "ECHO")) {
-						System.out.println("echo");
-						out.write(parameter);
-						out.newLine();
-						out.flush();
-						
-					} else if (command.equalsIgnoreCase("LOGOUT")) {
-						System.out.println("Logout");
-					} else {
-						System.out.println("message " + message);
+						break;
+
+					case "ECHO":
+						System.out.println("echo message " + message);
+						sendResponse(out, message);
+						break;
+
+					case "LOGOUT":
+						System.out.println("Client Logged out");
+						return;
+
+					default:
+						System.out.println("Unrecognized command: " + message);
+						break;
 					}
 				}
 
@@ -107,5 +102,13 @@ public class ChatServer {
 				e.printStackTrace();
 			}
 		}
+		
+		private void sendResponse(BufferedWriter out, String response) throws IOException {
+		    out.write(response);
+		    out.newLine();
+		    out.flush();
+		}
 	}
+	
+	
 }
